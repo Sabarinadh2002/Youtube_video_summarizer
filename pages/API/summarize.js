@@ -1,17 +1,13 @@
 // pages/api/summarize.js
 
-
 import { HfInference } from '@huggingface/inference';
 import { getSubtitles } from 'youtube-captions-scraper';
 
-
-// Helper function to validate YouTube URL
 function isValidYoutubeUrl(url) {
   const regex = /^(https?:\/\/)?(www\.youtube\.com|youtu\.?be)\/.+$/;
   return regex.test(url);
 }
 
-// Function to extract video ID from YouTube URL
 function extractVideoId(url) {
   try {
     const urlObj = new URL(url);
@@ -21,7 +17,6 @@ function extractVideoId(url) {
   }
 }
 
-// Function to get video transcript from captions
 async function getVideoTranscript(youtubeUrl) {
   const videoId = extractVideoId(youtubeUrl);
 
@@ -34,12 +29,9 @@ async function getVideoTranscript(youtubeUrl) {
   }
 }
 
-// Function to summarize text using Hugging Face Inference API
 async function summarizeText(text) {
   const hf = new HfInference(process.env.HUGGINGFACE_API_KEY);
-
-  // Split the text into manageable chunks if necessary
-  const maxChunkSize = 500; // Adjust based on API input limitations
+  const maxChunkSize = 500;
   const textChunks = text.match(new RegExp(`(.|[\r\n]){1,${maxChunkSize}}`, 'g'));
   const summaries = [];
 
@@ -51,32 +43,29 @@ async function summarizeText(text) {
     summaries.push(result.summary_text);
   }
 
-  // Combine the summaries of each chunk
   return summaries.join(' ');
 }
 
-// API route handler
 export default async function handler(req, res) {
   if (req.method === 'POST') {
     const { youtubeUrl } = req.body;
 
-    // Validate YouTube URL
     if (!isValidYoutubeUrl(youtubeUrl)) {
       return res.status(400).json({ error: 'Invalid YouTube URL' });
     }
 
     try {
-      // Step 1: Fetch video transcript from captions
       const transcript = await getVideoTranscript(youtubeUrl);
 
       if (!transcript) {
         throw new Error('Transcript could not be retrieved.');
       }
 
-      // Step 2: Summarize the transcript
       const summary = await summarizeText(transcript);
 
-      // Return the summary
+      // Print the summary to the server's terminal/logs
+      console.log('Generated Summary:', summary);
+
       res.status(200).json({ summary });
     } catch (error) {
       console.error('Error in processing:', error);

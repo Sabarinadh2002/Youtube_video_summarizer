@@ -22,6 +22,7 @@
     "react-element-to-jsx-string": "^15.0.0",
     "tailwind-merge": "^2.5.4",
     "tailwindcss-animate": "^1.0.7",
+    "youtube-captions-scraper": "^2.0.3",
     "ytdl-core": "^4.11.5"
   },
   "devDependencies": {
