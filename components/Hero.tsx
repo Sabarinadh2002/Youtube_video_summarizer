@@ -3,14 +3,15 @@
 import React, { useState } from "react";
 import { Spotlight } from "./ui/spotlight";
 import { TextGenerateEffect } from "./ui/text-generate-effect";
+import { TextGenerateEffectSu } from "./ui/text-generate-effect-sum";
 
+// Define the shape of the summary data from your backend
 type SummarizedData = {
   summary: string;
   highlights: string[];
   key_insights: string[];
 };
 
-// Language options for translation + TTS
 const LANG_OPTIONS = [
   { label: "English (en)", value: "en" },
   { label: "Spanish (es)", value: "es" },
@@ -19,7 +20,7 @@ const LANG_OPTIONS = [
 ];
 
 /**
- * Remove typical emojis so TTS doesn't read them as "rocket emoji," etc.
+ * Remove typical emojis so the TTS engine doesn't say "rocket emoji", etc.
  */
 function removeEmojis(str: string): string {
   return str.replace(
@@ -40,32 +41,50 @@ const Hero = () => {
   const [translatedHighlights, setTranslatedHighlights] = useState<string[]>([]);
   const [translatedInsights, setTranslatedInsights] = useState<string[]>([]);
 
-  // Handle user input
+  // States for sequential display
+  const [showSummary, setShowSummary] = useState(false);
+  const [showHighlights, setShowHighlights] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setYoutubeUrl(e.target.value);
   };
 
-  // Summarize logic
+  // Function to reveal sections sequentially
+  const revealSections = () => {
+    setTimeout(() => {
+      setShowSummary(true);
+      setTimeout(() => {
+        setShowHighlights(true);
+        setTimeout(() => {
+          setShowInsights(true);
+        }, 500);
+      }, 500);
+    }, 300);
+  };
+
+  // Summarize logic: call backend and then reveal sections sequentially.
   const handleSummarize = async () => {
     setSummarizedData(null);
     setTranslatedSummary("");
     setTranslatedHighlights([]);
     setTranslatedInsights([]);
+    setShowSummary(false);
+    setShowHighlights(false);
+    setShowInsights(false);
     setError("");
     setLoading(true);
 
     try {
-      // Directly call Python backend at localhost:8000
       const response = await fetch("http://localhost:8000/summarize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ youtube_url: youtubeUrl }),
       });
-
       const data = await response.json();
       if (response.ok) {
-        // data should be { summary, highlights, key_insights }
         setSummarizedData(data);
+        revealSections();
       } else {
         setError(data.detail || data.error || "An error occurred during processing.");
       }
@@ -80,21 +99,21 @@ const Hero = () => {
   // Translate logic
   const handleTranslate = async () => {
     if (!summarizedData) return;
-
     try {
-      // 1) Translate summary
+      // Translate summary
       const resSum = await fetch("http://localhost:8000/translate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: summarizedData.summary,
-          target_language: targetLanguage
-        })
+          target_language: targetLanguage,
+        }),
       });
       const dataSum = await resSum.json();
+      console.log("Translation response for summary:", dataSum);
       const newSummary = dataSum.translated_text || "";
 
-      // 2) Translate highlights
+      // Translate highlights
       const newHighlights: string[] = [];
       for (const h of summarizedData.highlights) {
         const resH = await fetch("http://localhost:8000/translate", {
@@ -102,14 +121,15 @@ const Hero = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: h,
-            target_language: targetLanguage
-          })
+            target_language: targetLanguage,
+          }),
         });
         const dH = await resH.json();
+        console.log("Translation response for highlight:", dH);
         newHighlights.push(dH.translated_text);
       }
 
-      // 3) Translate insights
+      // Translate key insights
       const newInsights: string[] = [];
       for (const i of summarizedData.key_insights) {
         const resI = await fetch("http://localhost:8000/translate", {
@@ -117,45 +137,60 @@ const Hero = () => {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text: i,
-            target_language: targetLanguage
-          })
+            target_language: targetLanguage,
+          }),
         });
         const dI = await resI.json();
+        console.log("Translation response for key insight:", dI);
         newInsights.push(dI.translated_text);
       }
 
       setTranslatedSummary(newSummary);
       setTranslatedHighlights(newHighlights);
       setTranslatedInsights(newInsights);
-
     } catch (error) {
-      console.error(error);
+      console.error("Translation error:", error);
       setError("Failed to translate the text. Check console.");
     }
   };
 
-  // Text-to-Speech function
+  // Text-to-Speech (removes emoji descriptions)
   const handleSpeak = (text: string) => {
     if (!text) return;
+    // Cancel any ongoing speech
+    speechSynthesis.cancel();
     const noEmojiText = removeEmojis(text);
     const utterance = new SpeechSynthesisUtterance(noEmojiText);
     utterance.lang = targetLanguage;
     speechSynthesis.speak(utterance);
   };
 
+  // New functions for Pause and Resume
+  const handlePauseSpeech = () => {
+    if (speechSynthesis.speaking && !speechSynthesis.paused) {
+      speechSynthesis.pause();
+    }
+  };
+
+  const handleResumeSpeech = () => {
+    if (speechSynthesis.paused) {
+      speechSynthesis.resume();
+    }
+  };
+
   // Combine text for TTS
   const combinedTextForTTS = (): string => {
-    const s = translatedSummary || summarizedData?.summary || "";
-    const h = translatedHighlights.length > 0 ? translatedHighlights : (summarizedData?.highlights || []);
-    const i = translatedInsights.length > 0 ? translatedInsights : (summarizedData?.key_insights || []);
-
-    // Insert punctuation so it doesn't run together
+    const s = translatedSummary || (summarizedData?.summary || "");
+    const h =
+      translatedHighlights.length > 0 ? translatedHighlights : (summarizedData?.highlights || []);
+    const i =
+      translatedInsights.length > 0 ? translatedInsights : (summarizedData?.key_insights || []);
     return `Summary: ${s}. Highlights: ${h.join(". ")}. Key Insights: ${i.join(". ")}.`;
   };
 
   return (
-    <div className="h-screen pt-36">
-      {/* Some Spotlights (optional UI) */}
+    <div className="min-h-screen pt-36 pb-16">
+      {/* Decorative Spotlights */}
       <div>
         <Spotlight className="-top-40 -left-10 md:-left-32 md:-top-20 h-screen" fill="white" />
         <Spotlight className="h-[80vh] w-[50vw] top-10 left-full" fill="purple" />
@@ -168,11 +203,11 @@ const Hero = () => {
           <p className="uppercase tracking-widest text-xs text-center text-blue-100 max-w-80">
             Hi,
           </p>
-          <TextGenerateEffect
-            className="text-center text-[40px] md:text-5xl lg:text-6xl"
+          <TextGenerateEffectSu
+            className="text-center"
             words="Watch less, learn more and fast from long videos"
           />
-          <p className="text-center md:tracking-wider mb-4 text-sm md:text-lg lg:text-1xl">
+          <p className="text-center md:tracking-wider mb-4 text-sm">
             Get YouTube video summaries in a minute. Just paste the link below.
           </p>
 
@@ -188,12 +223,7 @@ const Hero = () => {
             <button
               onClick={handleSummarize}
               disabled={loading || !youtubeUrl}
-              className="inline-flex h-12 items-center justify-center rounded-md border border-slate-800
-                bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)]
-                bg-[length:200%_100%] px-6 font-medium text-slate-400 transition-colors
-                focus:outline-none focus:ring-2 focus:ring-slate-400
-                focus:ring-offset-2 focus:ring-offset-slate-50
-                relative overflow-hidden"
+              className="inline-flex h-12 items-center justify-center rounded-md border border-slate-800 bg-[linear-gradient(110deg,#000103,45%,#1e2631,55%,#000103)] bg-[length:200%_100%] px-6 font-medium text-slate-400 transition-colors focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 focus:ring-offset-slate-50 relative overflow-hidden"
             >
               {loading ? (
                 <span className="animate-pulse">Summarizing.....</span>
@@ -203,85 +233,129 @@ const Hero = () => {
             </button>
           </div>
 
-          {/* Error */}
+          {/* Error Message */}
           {error && (
-            <p className="text-red-500 mt-4 text-center">
-              {error}
-            </p>
+            <p className="text-red-500 mt-4 text-center">{error}</p>
           )}
 
-          {/* Summarized Data */}
+          {/* Summarized Data Section */}
           {summarizedData && (
-            <div className="mt-8 p-4 bg-gray-100 rounded-md text-black w-full max-h-[500px] overflow-y-auto">
-              <h2 className="text-xl font-bold mb-2">
+            <div
+              className="mt-8 p-4 rounded-md w-full max-h-[500px] overflow-y-auto"
+              style={{ backgroundColor: "transparent", border: "4px solid white" }}
+            >
+              {/* Summary Section */}
+              <h2 className="text-lg font-bold mb-2">
                 {translatedSummary ? "Translated Summary:" : "Summary:"}
               </h2>
-              <p className="mb-4">
-                {translatedSummary || summarizedData.summary}
-              </p>
+              {showSummary ? (
+                <TextGenerateEffect
+                  words={translatedSummary || summarizedData.summary}
+                  className="mb-4 text-base"
+                  duration={0.5}
+                />
+              ) : (
+                <p className="mb-4 italic text-base">Loading summary...</p>
+              )}
 
-              <h2 className="text-xl font-bold mb-2">
+              {/* Highlights Section */}
+              <h2 className="text-lg font-bold mb-2">
                 {translatedHighlights.length ? "Translated Highlights:" : "Highlights:"}
               </h2>
-              <ul className="list-none mb-4">
-                {(translatedHighlights.length
-                  ? translatedHighlights
-                  : summarizedData.highlights
-                ).map((item, idx) => (
-                  <li key={idx} className="flex items-start mb-1">
-                    <span className="mr-2 text-lg">{item.split(" ")[0]}</span>
-                    <span>{item.replace(/^\S+\s/, "")}</span>
-                  </li>
-                ))}
-              </ul>
+              {showHighlights ? (
+                <ul className="list-none mb-4 text-base">
+                  {(translatedHighlights.length
+                    ? translatedHighlights
+                    : summarizedData.highlights
+                  ).map((item, idx) => (
+                    <li key={idx} className="flex items-start mb-1">
+                      <span className="mr-2 text-base">{item.split(" ")[0]}</span>
+                      <TextGenerateEffect
+                        words={item.replace(/^\S+\s/, "")}
+                        duration={0.5}
+                        className="text-base"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="italic mb-4 text-base">Loading highlights...</p>
+              )}
 
-              <h2 className="text-xl font-bold mb-2">
+              {/* Key Insights Section */}
+              <h2 className="text-lg font-bold mb-2">
                 {translatedInsights.length ? "Translated Key Insights:" : "Key Insights:"}
               </h2>
-              <ul className="list-none">
-                {(translatedInsights.length
-                  ? translatedInsights
-                  : summarizedData.key_insights
-                ).map((insight, idx) => (
-                  <li key={idx} className="flex items-start mb-1">
-                    <span className="mr-2 text-lg">{insight.split(" ")[0]}</span>
-                    <span>{insight.replace(/^\S+\s/, "")}</span>
-                  </li>
-                ))}
-              </ul>
+              {showInsights ? (
+                <ul className="list-none text-base">
+                  {(translatedInsights.length
+                    ? translatedInsights
+                    : summarizedData.key_insights
+                  ).map((insight, idx) => (
+                    <li key={idx} className="flex items-start mb-1">
+                      <span className="mr-2 text-base">{insight.split(" ")[0]}</span>
+                      <TextGenerateEffect
+                        words={insight.replace(/^\S+\s/, "")}
+                        duration={0.5}
+                        className="text-base"
+                      />
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="italic text-base">Loading key insights...</p>
+              )}
+            </div>
+          )}
 
-              {/* Language + Translate + TTS Buttons */}
-              <div className="flex flex-col sm:flex-row gap-4 mt-4">
-                <div className="flex items-center gap-2">
-                  <label htmlFor="language-select" className="font-semibold">
-                    Language:
-                  </label>
-                  <select
-                    id="language-select"
-                    value={targetLanguage}
-                    onChange={(e) => setTargetLanguage(e.target.value)}
-                    className="border border-gray-400 rounded p-1"
-                  >
-                    {LANG_OPTIONS.map((lang) => (
-                      <option key={lang.value} value={lang.value}>
-                        {lang.label}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <button
-                  onClick={handleTranslate}
-                  className="px-4 py-2 bg-blue-600 text-white rounded shadow"
+          {/* Fixed Controls Section (Outside the scrollable container) */}
+          {summarizedData && (
+            <div className="mt-4 flex flex-col sm:flex-row gap-4 p-4 bg-black/70">
+              <div className="flex items-center gap-2">
+                <label htmlFor="language-select" className="font-semibold text-sm text-white">
+                  Language:
+                </label>
+                <select
+                  id="language-select"
+                  value={targetLanguage}
+                  onChange={(e) => setTargetLanguage(e.target.value)}
+                  className="border border-gray-400 rounded p-1 text-sm"
                 >
-                  Translate
+                  {LANG_OPTIONS.map((lang) => (
+                    <option key={lang.value} value={lang.value}>
+                      {lang.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleTranslate}
+                className="px-4 py-2 bg-blue-600 text-white rounded shadow text-sm"
+              >
+                Translate
+              </button>
+
+              <button
+                onClick={() => handleSpeak(combinedTextForTTS())}
+                className="px-4 py-2 bg-green-600 text-white rounded shadow text-sm"
+              >
+                Speak
+              </button>
+
+              {/* Popup buttons for Pause and Resume */}
+              <div className="flex gap-2">
+                <button
+                  onClick={handlePauseSpeech}
+                  className="px-3 py-2 bg-yellow-600 text-white rounded shadow text-sm"
+                >
+                  Pause
                 </button>
-
                 <button
-                  onClick={() => handleSpeak(combinedTextForTTS())}
-                  className="px-4 py-2 bg-green-600 text-white rounded shadow"
+                  onClick={handleResumeSpeech}
+                  className="px-3 py-2 bg-indigo-600 text-white rounded shadow text-sm"
                 >
-                  Speak
+                  Resume
                 </button>
               </div>
             </div>
