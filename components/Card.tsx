@@ -13,9 +13,9 @@ const Approach = () => {
       <div className="my-20 flex flex-col lg:flex-row items-center justify-center w-full gap-4">
         {/* add des prop */}
         <Card
-          title="Discovery & Planning"
+          title="Copy & Paste"
           icon={<AceternityIcon order="Step 1" />}
-          des="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+          des="Copy the YouTube video like from YouTube and paste the link into the test field provided. Make sure the link is correctly copied and paste"
         >
           <CanvasRevealEffect
             animationSpeed={5.1}
@@ -24,9 +24,9 @@ const Approach = () => {
           />
         </Card>
         <Card
-          title="Design & Development"
+          title="Generate Summary"
           icon={<AceternityIcon order="Step 2" />}
-          des="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+          des="Click the 'Submit' button to trigger the summarization process. After few second you can see the summary of the video along with highlights and key insights."
         >
           <CanvasRevealEffect
             animationSpeed={3}
@@ -44,9 +44,9 @@ const Approach = () => {
           {/* <div className="absolute inset-0 [mask-image:radial-gradient(400px_at_center,white,transparent)] bg-black/50 dark:bg-black/90" /> */}
         </Card>
         <Card
-          title="Launch & Support"
+          title="Translate & Listen"
           icon={<AceternityIcon order="Step 3" />}
-          des="Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."
+          des="Select your prefered language from the dropdown, the click 'Translate' to convert the summary. Use the 'Speak' button to listien to the summary, with an options to pause and resume as needed."
         >
           <CanvasRevealEffect
             animationSpeed={3}

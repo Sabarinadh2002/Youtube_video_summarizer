@@ -7,6 +7,8 @@ from youtube_transcript_api import YouTubeTranscriptApi
 import ollama
 from fastapi.middleware.cors import CORSMiddleware
 from urllib.parse import urlparse, parse_qs
+# Using deep_translator for translation
+from deep_translator import GoogleTranslator
 
 import torch
 
@@ -16,8 +18,7 @@ if torch.cuda.is_available():
 else:
     print("No CUDA-capable GPU detected.")
 
-# Using deep_translator for translation
-from deep_translator import GoogleTranslator
+
 
 app = FastAPI()
 
