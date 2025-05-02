@@ -32,9 +32,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-###############################################################################
+
 # Pydantic models for request bodies
-###############################################################################
+
 class SummarizeRequest(BaseModel):
     youtube_url: str
     model_name: Optional[str] = "llama3.2"
@@ -43,9 +43,7 @@ class TranslateRequest(BaseModel):
     text: str
     target_language: str
 
-###############################################################################
-# Helper: Extract video ID from URL
-###############################################################################
+#  Extract video ID from URL
 def extract_video_id(url: str) -> Optional[str]:
     try:
         parsed = urlparse(url)
@@ -55,9 +53,9 @@ def extract_video_id(url: str) -> Optional[str]:
         print(f"[DEBUG] Error extracting video ID: {e}")
         return None
 
-###############################################################################
-# Helper: Fetch transcript from YouTube
-###############################################################################
+
+#  Fetch transcript from YouTube
+
 def get_youtube_transcript(youtube_url: str) -> str:
     video_id = extract_video_id(youtube_url)
     if not video_id:
@@ -71,9 +69,9 @@ def get_youtube_transcript(youtube_url: str) -> str:
     except Exception as e:
         raise RuntimeError(f"Could not fetch transcript: {e}")
 
-###############################################################################
-# Helper: Chunk the transcript if it's too large
-###############################################################################
+
+#  Chunk the transcript if it's too large
+
 def chunk_transcript(transcript: str, chunk_size: int = 1200) -> List[str]:
     words = transcript.split()
     chunks = []
@@ -85,9 +83,8 @@ def chunk_transcript(transcript: str, chunk_size: int = 1200) -> List[str]:
         start_idx = end_idx
     return chunks
 
-###############################################################################
 # Summarization functions
-###############################################################################
+
 def summarize_long_transcript(transcript: str, model_name: str) -> dict:
     text_chunks = chunk_transcript(transcript, chunk_size=1200)
     all_highlights = []
@@ -126,6 +123,8 @@ def llm_chunk_summary(chunk_text: str, model_name: str) -> str:
         "Key Insights:\n"
         "- 🔍 bullet 1\n"
         "- 💡 bullet 2\n"
+        "**Begin the response with “Summary: Video talks about”**"
+        
     )
     response = ollama.generate(
         model=model_name,
@@ -154,9 +153,11 @@ def llm_raw_summary(text: str, model_name: str) -> str:
         "Key Insights:\n"
         "- 🔍 bullet 1\n"
         "- 💡 bullet 2\n"
+        "**Begin the response with “Summary: Video talks about” **"
+        
     )
     response = ollama.generate(
-        model=model_name,
+        model=model_name, 
         prompt=prompt
     )
     raw_output = response.get("response", "")
@@ -177,9 +178,10 @@ def summarize_text(text: str, model_name: str = "llama3.2") -> dict:
 
 def postprocess_summary(llm_output: str) -> str:
     disallowed_phrases = [
-        "Here are the 3 sections:",
+        
         "****",
-        "Here is the summarized transcript in three sections:",
+        
+        "Here is the summarized video in three sections, with bullet points starting with relevant emojis:",
         "Here is the summary, highlights, and key insights in the requested format:",
     ]
     for phrase in disallowed_phrases:
@@ -247,9 +249,9 @@ def parse_summary_to_json(final_summary: str) -> dict:
         result["summary"] = final_summary.strip()
     return result
 
-###############################################################################
+
 # Summarize Endpoint
-###############################################################################
+
 @app.post("/summarize")
 def summarize_route(req: SummarizeRequest):
     youtube_url = req.youtube_url
@@ -267,9 +269,9 @@ def summarize_route(req: SummarizeRequest):
         print("[DEBUG] Summarization error:", e)
         raise HTTPException(status_code=500, detail=str(e))
 
-###############################################################################
+
 # Translation Endpoint with Debug Logging
-###############################################################################
+
 @app.post("/translate")
 def translate_text(req: TranslateRequest):
     try:
@@ -292,8 +294,8 @@ def translate_text(req: TranslateRequest):
         print(f"[DEBUG] Translation error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-###############################################################################
+
 # Main
-###############################################################################
+
 if __name__ == "__main__":
     uvicorn.run("app:app", host="0.0.0.0", port=8000, reload=True)

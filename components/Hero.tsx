@@ -211,7 +211,7 @@ const Hero = () => {
       lg:max-w-[60vw] flex flex-col items-center justify-center'>
       <h2 className='uppercase tracking-widest
        text-xs text-center text-blue-100 max-w-80'>
-        Dynamic Web Magic 
+        Video Summariz
       </h2>
           <TextGenerateEffectSu
             className="text-center text-[40px]"
