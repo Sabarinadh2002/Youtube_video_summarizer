@@ -103,3 +103,48 @@ Paste any YouTube link and instantly receive:
   - `/summarize` returns `{ summary, highlights[], key_insights[] }`  
   - `/translate` returns `{ translated_text }`  
 ---
+
+## 4 . User Manual
+
+### Front Page
+<img src="image/front.png" alt="tarting" width="800"/>
+
+**1. Paste YouTube URL**  
+- Locate the input field at the top of the page.  
+- Paste your video link (e.g. `https://www.youtube.com/watch?v=...`).  
+- Click **Submit** to start summarization.  
+
+**2. View Summary**  
+- After a brief loading animation, the **Summary** appears first.  
+- This is a 1–2 line overview of “what the video talks about.”  
+
+**3. Browse Highlights**  
+- Next, the **Highlights** section reveals key bullet points (each with an emoji).  
+- Scroll within the box if there are many points.  
+
+**4. Read Key Insights**  
+- Finally, the **Key Insights** section shows deeper take-aways.  
+- Use the scrollbar to navigate if needed.  
+
+**5. Change Language**  
+- Under the results box, select your preferred language from the **Language** dropdown.  
+- Click **Translate** to re-render Summary / Highlights / Insights in that language.  
+
+**6. Listen with Text-to-Speech**  
+- Click **Speak** to hear the current text read aloud.  
+- Use **Pause** to halt speech mid-stream.  
+- Use **Resume** to continue from where it left off.
+
+###  How to Use
+<img src="image/manual.png" alt="tarting" width="800"/>
+**1. What is this section**
+- Qucik guideline to show how to use this website.  
+- Hover the mouse around the each card.  
+- The steps will appears.  
+
+---
+
+ ## 🧑‍💻 Author
+
+**Sabarinadh**  
+[GitHub Profile](https://github.com/Sabarinadh2002)
