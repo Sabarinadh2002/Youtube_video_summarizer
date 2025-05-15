@@ -139,6 +139,7 @@ Paste any YouTube link and instantly receive:
 <img src="image/manual.png" alt="tarting" width="800"/>
 
 **1. What is this section**
+- As you scroll down you can see Quick guideline section. 
 - Qucik guideline to show how to use this website.  
 - Hover the mouse around the each card.  
 - The steps will appears.  
